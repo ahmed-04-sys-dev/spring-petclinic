@@ -30,12 +30,18 @@ pipeline {
 
                 stage('Couverture de Code') {
                     steps {
-                        bat 'mvn cobertura:cobertura -Dcobertura.report.format=xml'
+                        bat 'mvn jacoco:prepare-agent verify jacoco:report'
                     }
                     post {
                         always {
-                            cobertura coberturaReportFile: 'target/site/cobertura/coverage.xml',
-                                      onlyStable: false
+                            publishHTML(target: [
+                                allowMissing         : true,
+                                alwaysLinkToLastBuild: true,
+                                keepAll              : true,
+                                reportDir            : 'target/site/jacoco',
+                                reportFiles          : 'index.html',
+                                reportName           : 'Code Coverage JaCoCo'
+                            ])
                         }
                     }
                 }
@@ -55,9 +61,12 @@ pipeline {
             post {
                 always {
                     publishHTML(target: [
-                        reportDir  : 'target/site',
-                        reportFiles: 'index.html',
-                        reportName : 'Maven Site'
+                        allowMissing         : true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll              : true,
+                        reportDir            : 'target/site',
+                        reportFiles          : 'index.html',
+                        reportName           : 'Maven Site'
                     ])
                 }
             }
@@ -79,9 +88,7 @@ pipeline {
 
     post {
         failure {
-            mail to: 'admin@example.com',
-                 subject: "ECHEC - ${JOB_NAME} #${BUILD_NUMBER}",
-                 body: "Une étape a échoué.\nVoir : ${BUILD_URL}"
+            echo "Pipeline échoué - vérifiez les logs"
         }
         success {
             echo 'Pipeline terminé avec succès !'
